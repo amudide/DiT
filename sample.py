@@ -11,12 +11,12 @@ import torch
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
 from torchvision.utils import save_image
+import argparse
+from diffusers.models import AutoencoderKL ## VAE
+
 from diffusion import create_diffusion
-from diffusers.models import AutoencoderKL
 from download import find_model
 from models import DiT_models
-import argparse
-
 
 def main(args):
     # Setup PyTorch:
