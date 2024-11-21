@@ -264,6 +264,33 @@ class DiT(nn.Module):
         half_eps = uncond_eps + cfg_scale * (cond_eps - uncond_eps)
         eps = torch.cat([half_eps, half_eps], dim=0)
         return torch.cat([eps, rest], dim=1)
+    
+    def forward_ee(self, x, t, y, ee):
+        """
+        Forward pass of DiT with early exit.
+        x: (N, C, H, W) tensor of spatial inputs (images or latent representations of images)
+        t: (N,) tensor of diffusion timesteps
+        y: (N,) tensor of class labels
+        ee: number of layers to run before exiting. 0 <= ee < self.depth
+        """
+        x = self.x_embedder(x) + self.pos_embed  # (N, T, D), where T = H * W / patch_size ** 2
+        t = self.t_embedder(t)                   # (N, D)
+        y = self.y_embedder(y, self.training)    # (N, D)
+        c = t + y                                # (N, D)
+        for i, block in enumerate(self.blocks):
+            if i == ee:
+                x_ee = self.final_layer(x, c)
+                x_ee = self.unpatchify(x_ee)
+            x = block(x, c)                      # (N, T, D)
+        x = self.final_layer(x, c)                # (N, T, patch_size ** 2 * out_channels)
+        x = self.unpatchify(x)                   # (N, out_channels, H, W)
+        return x, x_ee
+    
+    def forward_with_fgee(self, x, t, y, cfg_scale):
+        """
+        Forward pass of DiT with free guidance using early exit.
+        """
+        # TODO
 
 
 #################################################################################
