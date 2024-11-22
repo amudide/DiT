@@ -277,7 +277,7 @@ class DiT(nn.Module):
         t = self.t_embedder(t)                   # (N, D)
         y = self.y_embedder(y, self.training)    # (N, D)
         c = t + y                                # (N, D)
-
+        
         x_ee = x.detach().clone()
         
         for i, block in enumerate(self.blocks):
@@ -305,7 +305,7 @@ class DiT(nn.Module):
 
         eps_fgee = eps_ee + cfg_scale * (eps - eps_ee)
         
-        return torch.cat([eps_ee, sigma_ee], dim=1)
+        return torch.cat([eps_fgee, sigma], dim=1)
 
 
 #################################################################################
