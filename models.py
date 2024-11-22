@@ -271,19 +271,26 @@ class DiT(nn.Module):
         x: (N, C, H, W) tensor of spatial inputs (images or latent representations of images)
         t: (N,) tensor of diffusion timesteps
         y: (N,) tensor of class labels
-        ee: number of layers to run before exiting. 0 <= ee < depth
+        ee: number of layers to run before exiting. 1 <= ee <= depth
         """
         x = self.x_embedder(x) + self.pos_embed  # (N, T, D), where T = H * W / patch_size ** 2
         t = self.t_embedder(t)                   # (N, D)
         y = self.y_embedder(y, self.training)    # (N, D)
         c = t + y                                # (N, D)
+
+        x_ee = x.detach().clone()
+        
         for i, block in enumerate(self.blocks):
-            if i == ee:
-                x_ee = self.final_layer(x, c)
-                x_ee = self.unpatchify(x_ee)
             x = block(x, c)                      # (N, T, D)
+            if i != ee:
+                x_ee = block(x_ee, c)
+
         x = self.final_layer(x, c)                # (N, T, patch_size ** 2 * out_channels)
         x = self.unpatchify(x)                   # (N, out_channels, H, W)
+
+        x_ee = self.final_layer(x_ee, c)
+        x_ee = self.unpatchify(x_ee)
+
         return x, x_ee
 
     def forward_with_fgee(self, x, t, y, cfg_scale, ee):
@@ -298,7 +305,7 @@ class DiT(nn.Module):
 
         eps_fgee = eps_ee + cfg_scale * (eps - eps_ee)
         
-        return torch.cat([eps_fgee, sigma], dim=1)
+        return torch.cat([eps_ee, sigma_ee], dim=1)
 
 
 #################################################################################
