@@ -265,47 +265,70 @@ class DiT(nn.Module):
         eps = torch.cat([half_eps, half_eps], dim=0)
         return torch.cat([eps, rest], dim=1)
     
-    def forward_ee(self, x, t, y, ee):
+    def forward_bad(self, x, t, y, skip):
         """
-        Forward pass of DiT with early exit.
+        Forward pass of DiT (bad).
         x: (N, C, H, W) tensor of spatial inputs (images or latent representations of images)
         t: (N,) tensor of diffusion timesteps
         y: (N,) tensor of class labels
-        ee: number of layers to run before exiting. 1 <= ee <= depth
+        ee: layer to skip. 0 <= ee < depth
         """
         x = self.x_embedder(x) + self.pos_embed  # (N, T, D), where T = H * W / patch_size ** 2
         t = self.t_embedder(t)                   # (N, D)
         y = self.y_embedder(y, self.training)    # (N, D)
         c = t + y                                # (N, D)
         
-        x_ee = x.detach().clone()
+        x_bad = x.detach().clone()
         
         for i, block in enumerate(self.blocks):
             x = block(x, c)                      # (N, T, D)
-            if i != ee:
-                x_ee = block(x_ee, c)
+            if i != skip:
+                x_bad = block(x_bad, c)
 
         x = self.final_layer(x, c)                # (N, T, patch_size ** 2 * out_channels)
         x = self.unpatchify(x)                   # (N, out_channels, H, W)
 
-        x_ee = self.final_layer(x_ee, c)
-        x_ee = self.unpatchify(x_ee)
+        x_bad = self.final_layer(x_bad, c)
+        x_bad = self.unpatchify(x_bad)
 
-        return x, x_ee
+        return x, x_bad
 
-    def forward_with_fgee(self, x, t, y, cfg_scale, ee):
+    def forward_bad_only(self, x, t, y, skip):
         """
-        Forward pass of DiT with free guidance using early exit.
+        Forward pass of DiT (bad).
+        x: (N, C, H, W) tensor of spatial inputs (images or latent representations of images)
+        t: (N,) tensor of diffusion timesteps
+        y: (N,) tensor of class labels
+        ee: layer to skip. 0 <= ee < depth
+        """
+        x = self.x_embedder(x) + self.pos_embed  # (N, T, D), where T = H * W / patch_size ** 2
+        t = self.t_embedder(t)                   # (N, D)
+        y = self.y_embedder(y, self.training)    # (N, D)
+        c = t + y                                # (N, D)
+                
+        for i, block in enumerate(self.blocks):
+            if i != skip:
+                x = block(x, c)
+
+        x = self.final_layer(x, c)                # (N, T, patch_size ** 2 * out_channels)
+        x = self.unpatchify(x)                   # (N, out_channels, H, W)
+
+        return x
+
+
+    def forward_with_fg(self, x, t, y, cfg_scale, skip):
+        """
+        Forward pass of DiT with free guidance.
         """
 
-        model_out, model_out_ee = self.forward_ee(x, t, y, ee)
+        model_out, model_out_bad = self.forward_bad(x, t, y, skip)
 
         eps, sigma = model_out[:, :self.in_channels], model_out[:, self.in_channels:]
-        eps_ee, sigma_ee = model_out_ee[:, :self.in_channels], model_out_ee[:, self.in_channels:]
+        eps_bad, sigma_bad = model_out_bad[:, :self.in_channels], model_out_bad[:, self.in_channels:]
 
-        eps_fgee = eps_ee + cfg_scale * (eps - eps_ee)
+        eps_fg = eps_bad + cfg_scale * (eps - eps_bad)
         
-        return torch.cat([eps_fgee, sigma], dim=1)
+        return torch.cat([eps_fg, sigma], dim=1)
 
 
 #################################################################################
