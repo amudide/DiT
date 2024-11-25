@@ -21,7 +21,7 @@ import os
 #]
 
 commands = [
-    f"python sample_fg.py --image-size 256 --device 7 --num-sampling-steps 250 --cfg-scale {i} --skip {j}" for i in [1.5, 4.0] for j in [14, 21, 25]
+    f"python sample_fg.py --device 7 --cfg-scale {i} --skip {j} --seed 1" for i in [1.5, 4.0] for j in range(28)
 ]
 
 for c in commands:
@@ -29,3 +29,8 @@ for c in commands:
 
 for cmd in commands:
     os.system(cmd)
+
+'''
+python sample_fg.py --device 7 --cfg-scale 1.5 --skip 14
+'''
+
