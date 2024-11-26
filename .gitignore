@@ -1,4 +1,5 @@
 pretrained_models/
+samples/
 
 # Python bytecode and cache
 __pycache__/

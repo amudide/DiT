@@ -61,7 +61,7 @@ def main(args):
     samples = vae.decode(samples / 0.18215).sample
 
     # Save and display images:
-    save_image(samples, f"imgs/vanilla_steps{args.num_sampling_steps}_size{args.image_size}.png", nrow=4, normalize=True, value_range=(-1, 1))
+    save_image(samples, f"imgs/vanilla_steps{args.num_sampling_steps}_size{args.image_size}_seed{args.seed}.png", nrow=4, normalize=True, value_range=(-1, 1))
 
 
 if __name__ == "__main__":
