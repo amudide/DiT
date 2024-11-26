@@ -1,5 +1,6 @@
 pretrained_models/
 samples/
+*.npz
 
 # Python bytecode and cache
 __pycache__/

@@ -37,7 +37,7 @@ for cmd in commands:
 '''
 python sample_fg.py --device 7 --cfg-scale 1.5 --skip 14
 
-torchrun --nnodes=1 --nproc_per_node=4 sample_ddp_fg.py --model DiT-XL/2 --num-fid-samples 50000
+CUDA_VISIBLE_DEVICES=4,5,6,7 torchrun --nnodes=1 --nproc_per_node=4 sample_ddp_fg.py --model DiT-XL/2 --num-fid-samples 50000 --skip 12 --cfg-scale 4
 
 
 
