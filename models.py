@@ -282,7 +282,7 @@ class DiT(nn.Module):
         
         for i, block in enumerate(self.blocks):
             x = block(x, c)                      # (N, T, D)
-            if i != skip:
+            if i not in skip:
                 x_bad = block(x_bad, c)
 
         x = self.final_layer(x, c)                # (N, T, patch_size ** 2 * out_channels)
@@ -307,13 +307,39 @@ class DiT(nn.Module):
         c = t + y                                # (N, D)
                 
         for i, block in enumerate(self.blocks):
-            if i != skip:
+            if i not in skip:
                 x = block(x, c)
 
         x = self.final_layer(x, c)                # (N, T, patch_size ** 2 * out_channels)
         x = self.unpatchify(x)                   # (N, out_channels, H, W)
 
         return x
+    
+    def forward_ee(self, x, t, y, ee, both=True):
+        """
+        Forward pass of DiT (bad).
+        x: (N, C, H, W) tensor of spatial inputs (images or latent representations of images)
+        t: (N,) tensor of diffusion timesteps
+        y: (N,) tensor of class labels
+        ee: early exit. 0 <= ee < depth
+        """
+        x = self.x_embedder(x) + self.pos_embed  # (N, T, D), where T = H * W / patch_size ** 2
+        t = self.t_embedder(t)                   # (N, D)
+        y = self.y_embedder(y, self.training)    # (N, D)
+        c = t + y                                # (N, D)
+                
+        for i, block in enumerate(self.blocks):
+            if i == ee:
+                x_bad = self.final_layer(x, c)
+                x_bad = self.unpatchify(x_bad)
+            x = block(x, c)                      # (N, T, D)
+
+        x = self.final_layer(x, c)                # (N, T, patch_size ** 2 * out_channels)
+        x = self.unpatchify(x)                   # (N, out_channels, H, W)
+
+        if both:
+            return x, x_bad
+        return x_bad
 
 
     def forward_with_fg(self, x, t, y, cfg_scale, skip):
@@ -329,6 +355,20 @@ class DiT(nn.Module):
         eps_fg = eps_bad + cfg_scale * (eps - eps_bad)
         
         return torch.cat([eps_fg, sigma], dim=1)
+    
+    def forward_with_fgee(self, x, t, y, cfg_scale, ee):
+        """
+        Forward pass of DiT with free guidance via early exit.
+        """
+
+        model_out, model_out_bad = self.forward_ee(x, t, y, ee)
+
+        eps, sigma = model_out[:, :self.in_channels], model_out[:, self.in_channels:]
+        eps_bad, sigma_bad = model_out_bad[:, :self.in_channels], model_out_bad[:, self.in_channels:]
+
+        eps_fgee = eps_bad + cfg_scale * (eps - eps_bad)
+        
+        return torch.cat([eps_fgee, sigma], dim=1)
 
 
 #################################################################################

@@ -44,7 +44,11 @@ def main(args):
     vae = AutoencoderKL.from_pretrained(f"stabilityai/sd-vae-ft-{args.vae}").to(device)
 
     # Labels to condition the model with (feel free to change):
-    class_labels = [207, 360, 387, 974, 88, 979, 417, 279]
+    class_labels = [2, 31, 84, 107, 145,
+                    207, 293, 340, 353, 366,
+                    430, 483, 504, 526, 453,
+                    779, 780, 949, 928, 762,
+                    736, 508, 402, 770, 611]
 
     # Create sampling noise:
     n = len(class_labels)
@@ -65,7 +69,7 @@ def main(args):
     samples = vae.decode(samples / 0.18215).sample
 
     # Save and display images:
-    save_image(samples, f"imgs/cfg_cfgscale{args.cfg_scale}_steps{args.num_sampling_steps}_size{args.image_size}_seed{args.seed}.png", nrow=4, normalize=True, value_range=(-1, 1))
+    save_image(samples, f"imgs/cfg_cfgscale{args.cfg_scale}_steps{args.num_sampling_steps}_size{args.image_size}_seed{args.seed}.png", nrow=5, normalize=True, value_range=(-1, 1))
 
 
 if __name__ == "__main__":

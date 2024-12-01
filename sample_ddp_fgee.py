@@ -84,7 +84,7 @@ def main(args):
     model_string_name = args.model.replace("/", "-")
     ckpt_string_name = os.path.basename(args.ckpt).replace(".pt", "") if args.ckpt else "pretrained"
     folder_name = f"{model_string_name}-{ckpt_string_name}-size-{args.image_size}-vae-{args.vae}-" \
-                  f"cfg-{args.cfg_scale}-seed-{args.global_seed}-samples-{args.num_fid_samples}"
+                  f"cfg-{args.cfg_scale}-ee-{args.ee}-seed-{args.global_seed}-samples-{args.num_fid_samples}"
     sample_folder_dir = f"{args.sample_dir}/{folder_name}"
     if rank == 0:
         os.makedirs(sample_folder_dir, exist_ok=True)
@@ -111,22 +111,15 @@ def main(args):
         y = torch.randint(0, args.num_classes, (n,), device=device)
 
         # Setup classifier-free guidance:
-        if using_cfg:
-            z = torch.cat([z, z], 0)
-            y_null = torch.tensor([1000] * n, device=device)
-            y = torch.cat([y, y_null], 0)
-            model_kwargs = dict(y=y, cfg_scale=args.cfg_scale)
-            sample_fn = model.forward_with_cfg
-        else:
-            model_kwargs = dict(y=y)
-            sample_fn = model.forward
+        model_kwargs = dict(y=y, cfg_scale=args.cfg_scale, ee=args.ee)
+        sample_fn = model.forward_with_fgee
 
         # Sample images:
         samples = diffusion.p_sample_loop(
             sample_fn, z.shape, z, clip_denoised=False, model_kwargs=model_kwargs, progress=False, device=device
         )
-        if using_cfg:
-            samples, _ = samples.chunk(2, dim=0)  # Remove null class samples
+        #if using_cfg:
+        #    samples, _ = samples.chunk(2, dim=0)  # Remove null class samples
 
         samples = vae.decode(samples / 0.18215).sample
         samples = torch.clamp(127.5 * samples + 128.0, 0, 255).permute(0, 2, 3, 1).to("cpu", dtype=torch.uint8).numpy()
@@ -147,6 +140,7 @@ def main(args):
 
     return sample_folder_dir
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, choices=list(DiT_models.keys()), default="DiT-XL/2")
@@ -157,6 +151,7 @@ if __name__ == "__main__":
     parser.add_argument("--image-size", type=int, choices=[256, 512], default=256)
     parser.add_argument("--num-classes", type=int, default=1000)
     parser.add_argument("--cfg-scale",  type=float, default=1.5)
+    parser.add_argument("--ee", type=int, default=[27])
     parser.add_argument("--num-sampling-steps", type=int, default=250)
     parser.add_argument("--global-seed", type=int, default=0)
     parser.add_argument("--tf32", action=argparse.BooleanOptionalAction, default=True,

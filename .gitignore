@@ -2,6 +2,9 @@ pretrained_models/
 samples/
 *.npz
 
+imgs/
+imgs-old/
+
 # Python bytecode and cache
 __pycache__/
 *.py[cod]
