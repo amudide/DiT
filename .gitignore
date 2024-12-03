@@ -4,6 +4,7 @@ samples/
 
 imgs/
 imgs-old/
+imgs-sweep-no-interval
 
 # Python bytecode and cache
 __pycache__/

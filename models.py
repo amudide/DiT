@@ -356,7 +356,7 @@ class DiT(nn.Module):
         
         return torch.cat([eps_fg, sigma], dim=1)
     
-    def forward_with_fgee(self, x, t, y, cfg_scale, ee):
+    def forward_with_fgee(self, x, t, y, cfg_scale, ee, interval):
         """
         Forward pass of DiT with free guidance via early exit.
         """
@@ -366,10 +366,12 @@ class DiT(nn.Module):
         eps, sigma = model_out[:, :self.in_channels], model_out[:, self.in_channels:]
         eps_bad, sigma_bad = model_out_bad[:, :self.in_channels], model_out_bad[:, self.in_channels:]
 
-        eps_fgee = eps_bad + cfg_scale * (eps - eps_bad)
+        if t[0].item() <= 1000 * interval:
+            eps_fgee = eps_bad + cfg_scale * (eps - eps_bad)
+        else:
+            eps_fgee = eps
         
         return torch.cat([eps_fgee, sigma], dim=1)
-
 
 #################################################################################
 #                   Sine/Cosine Positional Embedding Functions                  #

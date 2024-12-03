@@ -84,7 +84,7 @@ def main(args):
     model_string_name = args.model.replace("/", "-")
     ckpt_string_name = os.path.basename(args.ckpt).replace(".pt", "") if args.ckpt else "pretrained"
     folder_name = f"{model_string_name}-{ckpt_string_name}-size-{args.image_size}-vae-{args.vae}-" \
-                  f"cfg-{args.cfg_scale}-ee-{args.ee}-seed-{args.global_seed}-samples-{args.num_fid_samples}"
+                  f"cfg-{args.cfg_scale}-ee-{args.ee}-interval-{args.interval}-seed-{args.global_seed}-samples-{args.num_fid_samples}"
     sample_folder_dir = f"{args.sample_dir}/{folder_name}"
     if rank == 0:
         os.makedirs(sample_folder_dir, exist_ok=True)
@@ -111,7 +111,7 @@ def main(args):
         y = torch.randint(0, args.num_classes, (n,), device=device)
 
         # Setup classifier-free guidance:
-        model_kwargs = dict(y=y, cfg_scale=args.cfg_scale, ee=args.ee)
+        model_kwargs = dict(y=y, cfg_scale=args.cfg_scale, ee=args.ee, interval=args.interval)
         sample_fn = model.forward_with_fgee
 
         # Sample images:
@@ -152,6 +152,7 @@ if __name__ == "__main__":
     parser.add_argument("--num-classes", type=int, default=1000)
     parser.add_argument("--cfg-scale",  type=float, default=1.5)
     parser.add_argument("--ee", type=int, default=[27])
+    parser.add_argument("--interval", type=float, default=1.0)
     parser.add_argument("--num-sampling-steps", type=int, default=250)
     parser.add_argument("--global-seed", type=int, default=0)
     parser.add_argument("--tf32", action=argparse.BooleanOptionalAction, default=True,

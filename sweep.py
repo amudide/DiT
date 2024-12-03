@@ -25,7 +25,7 @@ import os
 #]
 
 commands = [
-    f"python sample_fgee.py --device 7 --cfg-scale {i} --ee {j} --seed {k}" for i in [1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5, 1.55] for j in range(27, 20, -1) for k in range(1, 5)
+    f"python sample_fgee.py --device 7 --cfg-scale 1.1 --ee 25 --interval {i / 20} --seed {j}" for i in range(21) for j in range(1, 5)
 ]
 
 #commands = [

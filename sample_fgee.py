@@ -55,7 +55,7 @@ def main(args):
     z = torch.randn(n, 4, latent_size, latent_size, device=device)
     y = torch.tensor(class_labels, device=device)
 
-    model_kwargs = dict(y=y, cfg_scale=args.cfg_scale, ee=args.ee)
+    model_kwargs = dict(y=y, cfg_scale=args.cfg_scale, ee=args.ee, interval=args.interval)
 
     # Sample images:
     samples = diffusion.p_sample_loop(
@@ -64,7 +64,7 @@ def main(args):
     samples = vae.decode(samples / 0.18215).sample
 
     # Save and display images:
-    save_image(samples, f"imgs/fgee_ee{args.ee}_cfgscale{args.cfg_scale}_steps{args.num_sampling_steps}_size{args.image_size}_seed{args.seed}.png", nrow=5, normalize=True, value_range=(-1, 1))
+    save_image(samples, f"imgs/fgee_ee{args.ee}_cfgscale{args.cfg_scale}_interval{args.interval}_steps{args.num_sampling_steps}_size{args.image_size}_seed{args.seed}.png", nrow=5, normalize=True, value_range=(-1, 1))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -75,6 +75,7 @@ if __name__ == "__main__":
     parser.add_argument("--cfg-scale", type=float, default=4.0)
     parser.add_argument("--device", type=int, default=0)
     parser.add_argument("--ee", type=int, default=27)
+    parser.add_argument("--interval", type=float, default=1.0)
     parser.add_argument("--num-sampling-steps", type=int, default=250)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--ckpt", type=str, default=None,
