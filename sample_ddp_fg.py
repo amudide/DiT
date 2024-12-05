@@ -138,6 +138,7 @@ def main(args):
     dist.barrier()
     dist.destroy_process_group()
 
+    return sample_folder_dir
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -157,4 +158,8 @@ if __name__ == "__main__":
     parser.add_argument("--ckpt", type=str, default=None,
                         help="Optional path to a DiT checkpoint (default: auto-download a pre-trained DiT-XL/2 model).")
     args = parser.parse_args()
-    main(args)
+    npz_path = main(args)
+
+    ref_path = "VIRTUAL_imagenet256_labeled.npz" if args.image_size == 256 else "VIRTUAL_imagenet512.npz"
+    cmd = f"python evaluations/evaluator.py evaluations/{ref_path} {npz_path}.npz"
+    os.system(f"{cmd} > {npz_path}.txt")
